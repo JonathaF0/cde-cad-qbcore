@@ -66,6 +66,70 @@ RegisterNetEvent('cdecad-sync:client:notify', function(type, message)
 end)
 
 -- =============================================================================
+-- POSTAL CODE FUNCTIONS
+-- =============================================================================
+
+-- Get postal code from configured resource
+function GetPostalCode()
+    -- Check if postal is enabled
+    if not Config.Postal or not Config.Postal.Enabled then
+        return nil
+    end
+    
+    local postal = nil
+    local resource = Config.Postal.Resource or 'nearest-postal'
+    
+    -- Try to get postal based on configured resource
+    if resource == 'nearest-postal' then
+        -- Standard nearest-postal export
+        local success, result = pcall(function()
+            return exports['nearest-postal']:getPostal()
+        end)
+        if success and result then
+            postal = result
+        end
+    elseif resource == 'npostal' then
+        -- Custom npostal export (requires modification to nearest-postal)
+        local success, result = pcall(function()
+            return exports.npostal:npostal()
+        end)
+        if success and result then
+            postal = result
+        end
+    elseif resource == 'qb-postal' then
+        -- QBCore postal
+        local success, result = pcall(function()
+            return exports['qb-postal']:getPostal()
+        end)
+        if success and result then
+            postal = result
+        end
+    elseif resource == 'custom' then
+        -- Custom export
+        local exportName = Config.Postal.CustomExport
+        local funcName = Config.Postal.CustomFunction or 'getPostal'
+        
+        if exportName then
+            local success, result = pcall(function()
+                return exports[exportName][funcName]()
+            end)
+            if success and result then
+                postal = result
+            end
+        end
+    end
+    
+    -- Return postal or fallback
+    if postal then
+        Utils.Debug('Got postal code:', postal)
+        return tostring(postal)
+    else
+        Utils.Debug('No postal code available')
+        return Config.Postal.FallbackText
+    end
+end
+
+-- =============================================================================
 -- LOCATION HELPERS
 -- =============================================================================
 
@@ -88,24 +152,39 @@ function GetCurrentZoneName()
     return GetLabelText(GetNameOfZone(coords.x, coords.y, coords.z))
 end
 
+-- Format location string with postal
+function FormatLocationString(street, zone, postal)
+    local format
+    
+    if postal and Config.Postal.IncludeInLocation then
+        format = Config.Postal.LocationFormat or '{street}, {zone} (Postal: {postal})'
+        format = format:gsub('{street}', street or 'Unknown')
+        format = format:gsub('{zone}', zone or 'Unknown')
+        format = format:gsub('{postal}', postal)
+    else
+        format = Config.Postal.LocationFormatNoPostal or '{street}, {zone}'
+        format = format:gsub('{street}', street or 'Unknown')
+        format = format:gsub('{zone}', zone or 'Unknown')
+    end
+    
+    return format
+end
+
 -- Get location info for 911 calls
 function GetLocationInfo()
     local coords = GetEntityCoords(PlayerPedId())
     local street = GetCurrentStreetName()
     local zone = GetCurrentZoneName()
+    local postal = GetPostalCode()
     
-    -- Try to get postal if available
-    local postal = nil
-    if exports['nearest-postal'] then
-        postal = exports['nearest-postal']:getPostal()
-    elseif exports['qb-postal'] then
-        postal = exports['qb-postal']:getPostal()
-    end
+    -- Format the full location string
+    local locationString = FormatLocationString(street, zone, postal)
     
     return {
         street = street,
         zone = zone,
         postal = postal,
+        location = locationString,
         coords = coords,
         x = coords.x,
         y = coords.y,
@@ -144,7 +223,7 @@ function Prepare911CallData(callType, anonymous)
     
     return {
         callType = callType,
-        location = location.street .. ', ' .. location.zone,
+        location = location.location,  -- Use formatted location string
         street = location.street,
         zone = location.zone,
         postal = location.postal,
@@ -160,6 +239,7 @@ end
 exports('GetLocationInfo', GetLocationInfo)
 exports('GetCurrentVehicle', GetCurrentVehicle)
 exports('Prepare911CallData', Prepare911CallData)
+exports('GetPostalCode', GetPostalCode)
 
 -- =============================================================================
 -- INITIALIZATION
@@ -177,6 +257,18 @@ CreateThread(function()
     end
     
     UpdatePlayerData()
+    
+    -- Test postal on load
+    if Config.Postal and Config.Postal.Enabled then
+        Wait(2000) -- Give postal resource time to initialize
+        local testPostal = GetPostalCode()
+        if testPostal then
+            Utils.Debug('Postal integration working. Current postal:', testPostal)
+        else
+            Utils.Debug('Postal integration enabled but no postal returned. Check Config.Postal.Resource setting.')
+        end
+    end
+    
     Utils.Debug('Client: Initialized (QBCore)')
 end)
 
