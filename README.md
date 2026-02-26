@@ -17,7 +17,7 @@ A comprehensive FiveM resource that automatically syncs QBCore character data to
 - [QBCore (qb-core)](https://github.com/qbcore-framework/qb-core)
 - [ox_lib](https://github.com/overextended/ox_lib)
 - [Badger_Discord_API](https://github.com/JaredScar/Badger_Discord_API) (Optional, recommended)
-- [NearestPostal]([https://github.com/JaredScar/Badger_Discord_API](https://forum.cfx.re/t/release-nearest-postal-script/293511)) (Optional, recommended)
+- [NearestPostal](https://forum.cfx.re/t/release-nearest-postal-script/293511) (Optional, recommended)
 
 ## Installation
 
