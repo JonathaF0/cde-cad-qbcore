@@ -13,7 +13,7 @@ Config = {}
 Config.API_URL = 'https://your-cdecad-instance.com/api'
 
 -- Your CDECAD API Key (get this from your CDECAD admin panel)
-Config.API_KEY = 'apikey'
+Config.API_KEY = 'yourapikey'
 
 -- Your Community ID (Discord Guild ID that matches your CDECAD community)
 Config.COMMUNITY_ID = '1234567890123456789'
