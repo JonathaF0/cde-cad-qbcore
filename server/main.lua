@@ -10,6 +10,9 @@ local QBCore = exports['qb-core']:GetCoreObject()
 local syncedCivilians = {}
 local syncedVehicles = {}
 
+-- Forward declarations (functions defined later)
+local SyncPlayerVehicles
+
 -- =============================================================================
 -- QBCORE HELPER FUNCTIONS
 -- =============================================================================
@@ -140,7 +143,7 @@ local function SyncCharacter(source, playerData, isNew)
 end
 
 -- Sync player's vehicles
-local function SyncPlayerVehicles(source, playerData)
+SyncPlayerVehicles = function(source, playerData)
     local citizenid = playerData.citizenid
     
     -- Get vehicles from database
