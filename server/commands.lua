@@ -1,7 +1,20 @@
 --[[
-    CDECAD Sync - Server Commands
+    CDECAD Sync - Server Commands for QBCore
     Admin and player commands for CAD integration
 ]]
+
+-- Get QBCore object
+local QBCore = exports['qb-core']:GetCoreObject()
+
+-- Helper function to get player
+local function GetPlayer(source)
+    return QBCore.Functions.GetPlayer(source)
+end
+
+-- Helper function to get all players
+local function GetAllPlayers()
+    return QBCore.Functions.GetPlayers()
+end
 
 -- =============================================================================
 -- PLAYER COMMANDS
@@ -56,7 +69,7 @@ end
 RegisterCommand('reportstolen', function(source, args)
     if source == 0 then return end
     
-    local Player = exports.qbx_core:GetPlayer(source)
+    local Player = GetPlayer(source)
     if not Player then return end
     
     local description = table.concat(args, ' ')
@@ -82,7 +95,7 @@ RegisterCommand('cadsync', function(source, args)
         return
     end
     
-    local Player = exports.qbx_core:GetPlayer(targetSource)
+    local Player = GetPlayer(targetSource)
     if not Player then
         if source > 0 then
             TriggerClientEvent('cdecad-sync:client:notify', source, 'error', 'Player not found')
@@ -92,7 +105,7 @@ RegisterCommand('cadsync', function(source, args)
         return
     end
     
-    exports['cdecad-sync']:ForceSync(targetSource)
+    exports['cdecad-sync-qbcore']:ForceSync(targetSource)
     
     if source > 0 then
         TriggerClientEvent('cdecad-sync:client:notify', source, 'success', 'Syncing player to CAD...')
@@ -176,12 +189,13 @@ end, true)
 
 -- Sync all online players
 RegisterCommand('cadsyncall', function(source, args)
-    local players = exports.qbx_core:GetQBPlayers()
+    local players = GetAllPlayers()
     local count = 0
     
-    for _, player in pairs(players) do
+    for _, src in ipairs(players) do
+        local player = GetPlayer(src)
         if player and player.PlayerData then
-            exports['cdecad-sync']:ForceSync(player.PlayerData.source)
+            exports['cdecad-sync-qbcore']:ForceSync(src)
             count = count + 1
         end
     end
@@ -228,4 +242,4 @@ TriggerEvent('chat:addSuggestion', '/reportstolen', 'Report your vehicle as stol
     { name = 'description', help = 'Where/when was it stolen?' }
 })
 
-print('[CDECAD-SYNC] Commands registered')
+print('[CDECAD-SYNC] Commands registered (QBCore)')
